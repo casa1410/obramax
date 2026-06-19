@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBRAMAX - Control de Gastos e Ingresos de Obra</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { primary: { 50:'#f0f9ff', 100:'#e0f2fe', 600:'#0284c7', 700:'#0369a1', 800:'#075985', 900:'#0c4a6e' } } } }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="h-full flex flex-col font-sans text-slate-800 antialiased">
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     PANTALLA DE LOGIN
+════════════════════════════════════════════════════════════════════════════ -->
+<div id="login-screen" class="fixed inset-0 z-[100] bg-slate-900 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+        <div class="bg-slate-900 px-8 py-8 text-center">
+            <div class="bg-amber-500 text-slate-950 p-3 rounded-xl font-black text-2xl inline-block mb-3">
+                <i class="fa-solid fa-helmet-safety"></i>
+            </div>
+            <h1 class="text-xl font-black text-white tracking-tight">OBRAMAX</h1>
+            <p class="text-slate-400 text-xs mt-1">Control de Gastos de Obra</p>
+        </div>
+        <div class="px-8 py-6 space-y-4">
+
+            <!-- Formulario de login -->
+            <div id="login-form-section">
+                <div class="mb-4">
+                    <h2 class="text-slate-800 font-bold text-lg">Iniciar sesión</h2>
+                    <p class="text-slate-500 text-xs mt-1">Accede con las credenciales que te proporcionó el administrador</p>
+                </div>
+                <div id="login-error" class="hidden bg-rose-50 border border-rose-200 text-rose-700 text-xs px-3 py-2.5 rounded-lg flex items-center gap-2">
+                    <i class="fa-solid fa-circle-exclamation flex-shrink-0"></i>
+                    <span id="login-error-msg">Error</span>
+                </div>
+                <form id="login-form" onsubmit="handleLogin(event)" class="space-y-3 mt-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">Correo electrónico</label>
+                        <input type="email" id="login-email" required autocomplete="email"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 transition"
+                            placeholder="correo@empresa.com">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">Contraseña</label>
+                        <input type="password" id="login-password" required autocomplete="current-password"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 transition"
+                            placeholder="••••••••">
+                    </div>
+                    <button type="submit" id="login-btn"
+                        class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm rounded-lg transition shadow-sm">
+                        Ingresar
+                    </button>
+                </form>
+                <button onclick="showResetForm()" class="w-full mt-3 text-[11px] text-slate-400 hover:text-amber-600 transition text-center">
+                    ¿Olvidaste tu contraseña?
+                </button>
+            </div>
+
+            <!-- Formulario de recuperación -->
+            <div id="reset-form-section" class="hidden">
+                <div class="mb-4">
+                    <h2 class="text-slate-800 font-bold text-lg">Recuperar contraseña</h2>
+                    <p class="text-slate-500 text-xs mt-1">Te enviaremos un enlace para crear una nueva contraseña</p>
+                </div>
+                <div id="reset-error" class="hidden bg-rose-50 border border-rose-200 text-rose-700 text-xs px-3 py-2.5 rounded-lg flex items-center gap-2">
+                    <i class="fa-solid fa-circle-exclamation flex-shrink-0"></i>
+                    <span id="reset-error-msg">Error</span>
+                </div>
+                <div id="reset-success" class="hidden bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs px-3 py-2.5 rounded-lg flex items-center gap-2">
+                    <i class="fa-solid fa-circle-check flex-shrink-0"></i>
+                    <span>Enlace enviado. Revisa tu correo (también el spam).</span>
+                </div>
+                <form onsubmit="handlePasswordReset(event)" class="space-y-3 mt-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">Correo electrónico</label>
+                        <input type="email" id="reset-email" required autocomplete="email"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 transition"
+                            placeholder="correo@empresa.com">
+                    </div>
+                    <button type="submit" id="reset-btn"
+                        class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm rounded-lg transition shadow-sm">
+                        Enviar enlace
+                    </button>
+                </form>
+                <button onclick="showLoginForm()" class="w-full mt-3 text-[11px] text-slate-400 hover:text-amber-600 transition text-center flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-arrow-left text-[10px]"></i> Volver al inicio de sesión
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div id="app" class="hidden flex flex-col md:flex-row min-h-screen w-full">
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         SIDEBAR
+    ════════════════════════════════════════════════════════════════════════ -->
+    <aside class="w-full md:w-64 bg-slate-900 text-white flex-shrink-0 flex flex-col no-print">
+        <div class="p-5 bg-slate-950 flex items-center justify-between border-b border-slate-800">
+            <div class="flex items-center space-x-3">
+                <div class="bg-amber-500 text-slate-950 p-2 rounded-lg font-black tracking-wider text-xl">
+                    <i class="fa-solid fa-helmet-safety"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight text-white">OBRAMAX</h1>
+                    <p class="text-[10px] text-slate-400 font-mono">Control de Gastos v3.0</p>
+                </div>
+            </div>
+            <button onclick="toggleMobileMenu()" class="md:hidden text-slate-300 hover:text-white focus:outline-none">
+                <i class="fa-solid fa-bars text-xl"></i>
+            </button>
+        </div>
+
+        <div id="sidebar-collapsible" class="hidden md:flex flex-col flex-1 overflow-hidden">
+            <!-- Selector de obra activa -->
+            <div class="p-4 bg-slate-800/50 border-b border-slate-800">
+                <label class="block text-xs text-slate-400 font-semibold mb-1 uppercase tracking-wider">Proyecto Activo</label>
+                <div class="relative">
+                    <select id="sidebar-project-select" onchange="setActiveProject(this.value)"
+                        class="w-full bg-slate-900 text-amber-400 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500 appearance-none font-medium cursor-pointer">
+                        <option value="">-- Sin obras registradas --</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                        <i class="fa-solid fa-chevron-down text-xs"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navegación -->
+            <nav id="sidebar-nav" class="flex-1 p-4 space-y-1 overflow-y-auto">
+                <button onclick="switchView('dashboard')" data-view="dashboard" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition duration-200 bg-slate-800 text-white border-l-4 border-amber-500">
+                    <i class="fa-solid fa-chart-pie w-5"></i><span>Panel Principal</span>
+                </button>
+                <button onclick="switchView('projects')" data-view="projects" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition duration-200 text-slate-400 hover:bg-slate-800 hover:text-white border-l-4 border-transparent">
+                    <i class="fa-solid fa-map-location-dot w-5"></i><span>Gestión de Obras</span>
+                </button>
+                <button onclick="switchView('income')" data-view="income" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition duration-200 text-slate-400 hover:bg-slate-800 hover:text-white border-l-4 border-transparent">
+                    <i class="fa-solid fa-file-invoice-dollar w-5"></i><span>Registro Ingresos</span>
+                </button>
+                <button onclick="switchView('expenses')" data-view="expenses" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition duration-200 text-slate-400 hover:bg-slate-800 hover:text-white border-l-4 border-transparent">
+                    <i class="fa-solid fa-wallet w-5"></i><span>Registro Gastos</span>
+                </button>
+                <button onclick="switchView('reports')" data-view="reports" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition duration-200 text-slate-400 hover:bg-slate-800 hover:text-white border-l-4 border-transparent">
+                    <i class="fa-solid fa-file-pdf w-5"></i><span>Reportes & Exportar</span>
+                </button>
+                <button onclick="switchView('cloud'); loadUsersPanel()" data-view="cloud" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition duration-200 text-slate-400 hover:bg-slate-800 hover:text-white border-l-4 border-transparent">
+                    <i class="fa-solid fa-users-gear w-5"></i><span>Administración</span>
+                </button>
+            </nav>
+
+            <!-- Usuario / Rol -->
+            <div class="p-4 bg-slate-950 border-t border-slate-800 text-xs">
+                <div class="flex items-center space-x-3 mb-2">
+                    <div class="w-8 h-8 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-sm flex-shrink-0" id="user-avatar">U</div>
+                    <div class="min-w-0">
+                        <div class="font-bold text-slate-200 truncate" id="user-display-name">Usuario</div>
+                        <div class="text-slate-400 flex items-center gap-1">
+                            <i class="fa-solid fa-user-shield text-[10px]"></i>
+                            <span id="user-role">Cargando...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-[10px] text-slate-500 break-all font-mono mb-3" id="user-uuid">...</div>
+                <button onclick="handleLogout()"
+                    class="w-full py-1.5 bg-slate-800 hover:bg-rose-900/50 text-slate-400 hover:text-rose-300 border border-slate-700 hover:border-rose-800 rounded text-[11px] font-semibold transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrow-right-from-bracket text-[10px]"></i> Cerrar sesión
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         CONTENIDO PRINCIPAL
+    ════════════════════════════════════════════════════════════════════════ -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-x-hidden">
+
+        <!-- Header -->
+        <header class="bg-white border-b border-slate-200 px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 no-print">
+            <div>
+                <h2 class="text-xl font-bold text-slate-900" id="current-view-title">Panel Principal</h2>
+                <p class="text-xs text-slate-500 mt-1" id="current-view-subtitle">Resumen general y estado de flujos financieros</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <div id="db-connection-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Modo Local (Offline)</span>
+                </div>
+                <div class="px-4 py-2 bg-slate-100 rounded-lg text-sm font-semibold border border-slate-200 text-slate-700" id="header-active-project-name">
+                    Obra: Ninguna seleccionada
+                </div>
+            </div>
+        </header>
+
+        <div id="main-content-flow" class="p-6 flex-1 space-y-6">
+
+            <!-- ───────────────────────────────────────────────────────────────
+                 VISTA 1: DASHBOARD
+            ──────────────────────────────────────────────────────────────── -->
+            <section id="view-dashboard" class="space-y-6">
+                <div id="no-project-alert" class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg shadow-sm flex items-start gap-3">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-600 mt-1 text-lg"></i>
+                    <div>
+                        <h4 class="font-bold text-amber-800 text-sm">No se ha seleccionado ninguna obra</h4>
+                        <p class="text-xs text-amber-700 mt-1">Ve a <strong>"Gestión de Obras"</strong> para crear tu primer proyecto o selecciona uno en la barra lateral.</p>
+                    </div>
+                </div>
+
+                <!-- Filtros de fecha -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-end gap-4">
+                    <div class="w-full md:w-1/3">
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Fecha de Inicio</label>
+                        <input type="date" id="dash-filter-start" onchange="applyDashboardFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-600 focus:outline-none">
+                    </div>
+                    <div class="w-full md:w-1/3">
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Fecha Fin</label>
+                        <input type="date" id="dash-filter-end" onchange="applyDashboardFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-600 focus:outline-none">
+                    </div>
+                    <button onclick="resetDashboardFilters()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm rounded-lg font-medium transition flex items-center gap-2">
+                        <i class="fa-solid fa-arrows-rotate"></i> Restablecer
+                    </button>
+                </div>
+
+                <!-- Métricas financieras -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm relative overflow-hidden flex items-center justify-between">
+                        <div class="space-y-2">
+                            <span class="text-xs font-semibold text-emerald-600 tracking-wider uppercase block">Total Ingresos Acumulados</span>
+                            <h3 class="text-3xl font-black text-slate-900" id="metric-total-income">$0</h3>
+                            <p class="text-xs text-slate-400" id="metric-income-count">0 ingresos registrados</p>
+                        </div>
+                        <div class="bg-emerald-50 text-emerald-600 p-4 rounded-xl text-2xl"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                        <div class="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500"></div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm relative overflow-hidden flex items-center justify-between">
+                        <div class="space-y-2">
+                            <span class="text-xs font-semibold text-rose-600 tracking-wider uppercase block">Total Gastos Acumulados</span>
+                            <h3 class="text-3xl font-black text-slate-900" id="metric-total-expenses">$0</h3>
+                            <p class="text-xs text-slate-400" id="metric-expense-count">0 gastos registrados</p>
+                        </div>
+                        <div class="bg-rose-50 text-rose-600 p-4 rounded-xl text-2xl"><i class="fa-solid fa-arrow-trend-down"></i></div>
+                        <div class="absolute bottom-0 left-0 right-0 h-1 bg-rose-500"></div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm relative overflow-hidden flex items-center justify-between">
+                        <div class="space-y-2">
+                            <span class="text-xs font-semibold tracking-wider uppercase block text-primary-600" id="metric-balance-label">Saldo Disponible</span>
+                            <h3 class="text-3xl font-black text-slate-900" id="metric-net-balance">$0</h3>
+                            <p class="text-xs text-slate-400">Fondos líquidos para ejecución</p>
+                        </div>
+                        <div class="p-4 rounded-xl text-2xl" id="metric-balance-icon-container"><i class="fa-solid fa-scale-balanced"></i></div>
+                        <div class="absolute bottom-0 left-0 right-0 h-1" id="metric-balance-indicator-bar"></div>
+                    </div>
+                </div>
+
+                <!-- Gráficas -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
+                            <i class="fa-solid fa-chart-pie text-amber-500"></i> Distribución de Gastos por Tipo
+                        </h3>
+                        <div class="h-64 relative"><canvas id="chart-expenses-by-type"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
+                            <i class="fa-solid fa-chart-column text-primary-600"></i> Comparativa Ingresos vs Gastos
+                        </h3>
+                        <div class="h-64 relative"><canvas id="chart-income-vs-expense"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Últimos movimientos -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-100 bg-slate-50">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-clock-rotate-left text-slate-500"></i> Últimos Movimientos de la Obra
+                        </h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-100 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
+                                <tr>
+                                    <th class="py-3 px-6">Fecha</th>
+                                    <th class="py-3 px-6">Tipo</th>
+                                    <th class="py-3 px-6">Concepto / Descripción</th>
+                                    <th class="py-3 px-6">Tercero / Proveedor</th>
+                                    <th class="py-3 px-6 text-right">Monto</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-recent-movements-tbody" class="divide-y divide-slate-100">
+                                <tr><td colspan="5" class="py-8 text-center text-slate-400 text-xs">No hay movimientos recientes.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ───────────────────────────────────────────────────────────────
+                 VISTA 2: GESTIÓN DE OBRAS
+            ──────────────────────────────────────────────────────────────── -->
+            <section id="view-projects" class="space-y-6 hidden">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <h3 class="text-lg font-bold text-slate-800">Proyectos Activos</h3>
+                    <button onclick="openProjectModal()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-sm font-bold rounded-lg shadow transition flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Crear Nueva Obra
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="projects-grid"></div>
+            </section>
+
+            <!-- ───────────────────────────────────────────────────────────────
+                 VISTA 3: INGRESOS
+            ──────────────────────────────────────────────────────────────── -->
+            <section id="view-income" class="space-y-6 hidden">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                        <h3 class="text-md font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-filter text-slate-400"></i> Filtros de Ingresos
+                        </h3>
+                        <button onclick="openIncomeModal()" class="w-full md:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-plus"></i> Registrar Ingreso
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Fecha Inicial</label>
+                            <input type="date" id="income-filter-start" onchange="loadIncomesList()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Fecha Final</label>
+                            <input type="date" id="income-filter-end" onchange="loadIncomesList()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Fuente / Concepto</label>
+                            <input type="text" id="income-filter-source" oninput="loadIncomesList()" placeholder="Buscar fuente..." class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="resetIncomeFilters()" class="w-full px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-lg border border-slate-200 transition">Limpiar Filtros</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
+                                <tr>
+                                    <th class="py-3.5 px-6">Fecha</th>
+                                    <th class="py-3.5 px-6">Fuente o Concepto</th>
+                                    <th class="py-3.5 px-6">Observaciones</th>
+                                    <th class="py-3.5 px-6 text-right">Valor</th>
+                                    <th class="py-3.5 px-6 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="incomes-tbody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                        <span id="income-pagination-info">Mostrando 0 ingresos</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ───────────────────────────────────────────────────────────────
+                 VISTA 4: GASTOS
+            ──────────────────────────────────────────────────────────────── -->
+            <section id="view-expenses" class="space-y-6 hidden">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                        <h3 class="text-md font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-filter text-slate-400"></i> Filtros de Gastos
+                        </h3>
+                        <button onclick="openExpenseModal()" class="w-full md:w-auto px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold rounded-lg shadow transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-plus"></i> Registrar Gasto
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Fecha Inicial</label>
+                            <input type="date" id="expense-filter-start" onchange="loadExpensesList()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-600">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Fecha Final</label>
+                            <input type="date" id="expense-filter-end" onchange="loadExpensesList()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-600">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tipo de Gasto</label>
+                            <select id="expense-filter-type" onchange="loadExpensesList()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-600">
+                                <option value="">-- Todos --</option>
+                                <option value="EQU">EQU - Equipos</option>
+                                <option value="MAT">MAT - Materiales</option>
+                                <option value="TPT">TPT - Transporte</option>
+                                <option value="MO">MO - Mano de Obra</option>
+                                <option value="COST IND">COST IND - Costos Indirectos</option>
+                                <option value="CONT">CONT - Contratistas</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Proveedor</label>
+                            <input type="text" id="expense-filter-provider" oninput="loadExpensesList()" placeholder="Buscar proveedor..." class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-600">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Doc. Soporte</label>
+                            <select id="expense-filter-support" onchange="loadExpensesList()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-600">
+                                <option value="">-- Todos --</option>
+                                <option>Sin soporte</option>
+                                <option>Factura</option>
+                                <option>Recibo de pago</option>
+                                <option>Transferencia bancaria</option>
+                                <option>RUT</option>
+                                <option>Recibo de caja menor</option>
+                                <option>Captura de pantalla</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200">
+                                <tr>
+                                    <th class="py-3.5 px-4">Fecha</th>
+                                    <th class="py-3.5 px-4">Descripción</th>
+                                    <th class="py-3.5 px-4">Proveedor</th>
+                                    <th class="py-3.5 px-4">Clasificación</th>
+                                    <th class="py-3.5 px-4">Soporte</th>
+                                    <th class="py-3.5 px-4 text-right">Valor</th>
+                                    <th class="py-3.5 px-4 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expenses-tbody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 text-xs text-slate-500">
+                        <span id="expense-pagination-info">Mostrando 0 gastos</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ───────────────────────────────────────────────────────────────
+                 VISTA 5: REPORTES
+            ──────────────────────────────────────────────────────────────── -->
+            <section id="view-reports" class="space-y-6 hidden">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                    <h3 class="text-md font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-gears text-slate-400"></i> Generación de Reportes Financieros
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Fecha Inicial</label>
+                            <input type="date" id="report-filter-start" onchange="updateReportPreview()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Fecha Final</label>
+                            <input type="date" id="report-filter-end" onchange="updateReportPreview()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none">
+                        </div>
+                        <div class="flex items-end gap-2">
+                            <button onclick="triggerPrint()" class="flex-1 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold rounded-lg shadow transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-print"></i> Imprimir / PDF
+                            </button>
+                            <button onclick="exportToExcel()" class="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-file-excel"></i> Excel
+                            </button>
+                            <button onclick="exportToCSV()" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm font-semibold rounded-lg border border-slate-300 transition" title="Exportar CSV">CSV</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Área imprimible -->
+                <div id="print-area" class="bg-white p-8 rounded-xl border border-slate-200 shadow-lg space-y-8 font-sans">
+                    <div class="flex justify-between items-start border-b border-slate-200 pb-6">
+                        <div>
+                            <h2 class="text-2xl font-black text-slate-900 tracking-tight">REPORTE FINANCIERO DE OBRA</h2>
+                            <p class="text-xs text-slate-500 mt-1">Generado automáticamente por OBRAMAX</p>
+                            <div class="mt-4 text-sm space-y-1">
+                                <p><strong class="text-slate-700">Proyecto:</strong> <span id="report-project-name" class="font-bold">-</span></p>
+                                <p><strong class="text-slate-700">Código:</strong> <span id="report-project-code" class="text-slate-500">-</span></p>
+                                <p><strong class="text-slate-700">Rango:</strong> <span id="report-date-range">Todo el histórico</span></p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="bg-slate-900 text-white p-3 rounded-lg font-black text-lg inline-block">
+                                <i class="fa-solid fa-helmet-safety text-amber-500"></i> OBRAMAX
+                            </div>
+                            <p class="text-xs text-slate-500 mt-2 font-mono" id="report-generated-at">Fecha: --/--/----</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Resumen Consolidado</h4>
+                        <div class="grid grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div><span class="text-[10px] text-slate-500 uppercase block font-medium">Total Ingresos</span><p class="text-lg font-bold text-emerald-600" id="report-summary-income">$0</p></div>
+                            <div><span class="text-[10px] text-slate-500 uppercase block font-medium">Total Gastos</span><p class="text-lg font-bold text-rose-600" id="report-summary-expense">$0</p></div>
+                            <div><span class="text-[10px] text-slate-500 uppercase block font-medium">Saldo Disponible</span><p class="text-lg font-bold text-slate-900" id="report-summary-balance">$0</p></div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 border-b border-slate-200 pb-2 mb-3 text-sm">Detalle de Ingresos</h3>
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-100 text-slate-600 uppercase"><tr><th class="py-2 px-3">Fecha</th><th class="py-2 px-3">Fuente</th><th class="py-2 px-3">Observaciones</th><th class="py-2 px-3 text-right">Monto</th></tr></thead>
+                            <tbody id="report-income-rows" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 border-b border-slate-200 pb-2 mb-3 text-sm">Detalle de Gastos</h3>
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-100 text-slate-600 uppercase"><tr><th class="py-2 px-3">Fecha</th><th class="py-2 px-3">Descripción</th><th class="py-2 px-3">Proveedor</th><th class="py-2 px-3">Tipo</th><th class="py-2 px-3">Soporte</th><th class="py-2 px-3 text-right">Monto</th></tr></thead>
+                            <tbody id="report-expense-rows" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                    <div class="border-t border-slate-200 pt-6 flex justify-between items-center text-xs text-slate-400">
+                        <p>Reporte financiero consolidado — OBRAMAX</p>
+                        <p>Página 1 de 1</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ───────────────────────────────────────────────────────────────
+                 VISTA 6: ADMINISTRACIÓN DE USUARIOS
+            ──────────────────────────────────────────────────────────────── -->
+            <section id="view-cloud" class="space-y-6 hidden" onshow="loadUsersPanel()">
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center gap-3">
+                        <div class="bg-amber-100 text-amber-600 p-2.5 rounded-xl text-xl">
+                            <i class="fa-solid fa-users-gear"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800">Gestión de Usuarios</h3>
+                            <p class="text-xs text-slate-500">Administra los roles del equipo de trabajo</p>
+                        </div>
+                    </div>
+                    <div id="users-panel" class="p-6">
+                        <p class="text-slate-400 text-sm text-center py-8">Cargando usuarios...</p>
+                    </div>
+                </div>
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+                    <i class="fa-solid fa-circle-info text-amber-500 mt-0.5 flex-shrink-0"></i>
+                    <div class="text-xs text-amber-800 space-y-1">
+                        <p class="font-bold">¿Cómo agregar nuevos usuarios?</p>
+                        <p>1. Ve a <strong>Firebase Console → Authentication → Users → Agregar usuario</strong></p>
+                        <p>2. Ingresa el correo y contraseña del nuevo miembro del equipo</p>
+                        <p>3. La próxima vez que ese usuario inicie sesión aparecerá aquí con rol <strong>Supervisor</strong></p>
+                        <p>4. Cambia su rol desde la tabla de arriba</p>
+                    </div>
+                </div>
+            </section>
+
+        </div><!-- /main-content-flow -->
+    </main>
+</div><!-- /app -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     MODALES
+════════════════════════════════════════════════════════════════════════════ -->
+
+<!-- Modal: Crear/Editar Obra -->
+<div id="modal-project" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100">
+        <div class="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
+            <h3 class="font-bold text-base" id="project-modal-title">Registrar Nueva Obra</h3>
+            <button onclick="closeProjectModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form onsubmit="saveProjectForm(event)" class="p-6 space-y-4">
+            <input type="hidden" id="project-form-id">
+            <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Nombre de la Obra *</label>
+                <input type="text" id="project-form-name" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Ej: Condominio Las Camelias, Torre A">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Código Interno</label>
+                <input type="text" id="project-form-code" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Ej: OBR-2026-001">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Fecha de Inicio *</label>
+                    <input type="date" id="project-form-date" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Estado *</label>
+                    <select id="project-form-status" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        <option>En Planificación</option>
+                        <option selected>En Ejecución</option>
+                        <option>Suspendida</option>
+                        <option>Finalizada</option>
+                    </select>
+                </div>
+            </div>
+            <div class="pt-4 flex gap-3">
+                <button type="button" onclick="closeProjectModal()" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-lg transition">Cancelar</button>
+                <button type="submit" class="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-sm font-bold rounded-lg shadow transition">Guardar Obra</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Registrar/Editar Ingreso -->
+<div id="modal-income" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100">
+        <div class="px-6 py-4 bg-emerald-700 text-white flex justify-between items-center">
+            <h3 class="font-bold text-base" id="income-modal-title">Registrar Ingreso de Caja</h3>
+            <button onclick="closeIncomeModal()" class="text-emerald-200 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form onsubmit="saveIncomeForm(event)" class="p-6 space-y-4">
+            <input type="hidden" id="income-form-id">
+            <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Fecha del Ingreso *</label>
+                <input type="date" id="income-form-date" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Fuente o Concepto *</label>
+                <input type="text" id="income-form-source" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" placeholder="Ej: Desembolso del Banco">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Valor del Ingreso *</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-bold">$</span>
+                    <input type="text" id="income-form-value" required oninput="formatCurrencyInput(this)" class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 font-semibold" placeholder="0">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Observaciones</label>
+                <textarea id="income-form-obs" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" placeholder="Detalles opcionales..."></textarea>
+            </div>
+            <div class="pt-4 flex gap-3">
+                <button type="button" onclick="closeIncomeModal()" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-lg transition">Cancelar</button>
+                <button type="submit" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow transition">Guardar Ingreso</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Registrar/Editar Gasto -->
+<div id="modal-expense" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-100">
+        <div class="px-6 py-4 bg-rose-700 text-white flex justify-between items-center">
+            <h3 class="font-bold text-base" id="expense-modal-title">Registrar Gasto de Obra</h3>
+            <button onclick="closeExpenseModal()" class="text-rose-200 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form onsubmit="saveExpenseForm(event)" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+            <input type="hidden" id="expense-form-id">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Fecha *</label>
+                    <input type="date" id="expense-form-date" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-600">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tipo de Gasto *</label>
+                    <select id="expense-form-type" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-600">
+                        <option value="EQU">EQU - Equipos</option>
+                        <option value="MAT">MAT - Materiales</option>
+                        <option value="TPT">TPT - Transporte</option>
+                        <option value="MO">MO - Mano de Obra</option>
+                        <option value="COST IND">COST IND - Costos Indirectos</option>
+                        <option value="CONT">CONT - Contratistas</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Proveedor *</label>
+                    <input type="text" id="expense-form-provider" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-600" placeholder="Ej: Cemex">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Valor *</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-bold">$</span>
+                        <input type="text" id="expense-form-value" required oninput="formatCurrencyInput(this)" class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-600 font-semibold" placeholder="0">
+                    </div>
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Descripción *</label>
+                <input type="text" id="expense-form-desc" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-600" placeholder="Ej: Compra de 50 sacos de cemento gris">
+            </div>
+            <div class="grid grid-cols-2 gap-4 border-t border-slate-100 pt-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Documento Soporte *</label>
+                    <select id="expense-form-support" required onchange="handleSupportDocChange(this.value)" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-600">
+                        <option>Sin soporte</option>
+                        <option>Factura</option>
+                        <option>Recibo de pago</option>
+                        <option>Transferencia bancaria</option>
+                        <option>RUT</option>
+                        <option>Recibo de caja menor</option>
+                        <option>Captura de pantalla</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1" id="support-doc-no-label">Número de Soporte</label>
+                    <input type="text" id="expense-form-support-no" disabled class="w-full bg-slate-100 border border-slate-200 rounded-lg px-3 py-2 text-sm cursor-not-allowed" placeholder="Inactivo">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Adjuntar Archivo (PDF, JPG, PNG)</label>
+                <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 transition">
+                    <i class="fa-solid fa-cloud-arrow-up text-slate-400 mb-1"></i>
+                    <p class="text-xs text-slate-500 font-medium">Subir archivo digital</p>
+                    <p class="text-[10px] text-slate-400" id="attached-filename">Ningún archivo cargado</p>
+                    <input type="file" id="expense-form-file" accept=".pdf,.png,.jpg,.jpeg" onchange="handleFileAttachment(this)" class="hidden">
+                </label>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Observaciones</label>
+                <textarea id="expense-form-obs" rows="2" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-600" placeholder="Detalles adicionales..."></textarea>
+            </div>
+            <div class="pt-4 flex gap-3">
+                <button type="button" onclick="closeExpenseModal()" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-lg transition">Cancelar</button>
+                <button type="submit" class="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold rounded-lg shadow transition">Guardar Gasto</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Toast de notificaciones -->
+<div id="toast-message" class="fixed bottom-5 right-5 z-50 transform translate-y-10 opacity-0 transition-all duration-300 max-w-sm w-full bg-slate-900 text-white px-4 py-3.5 rounded-xl shadow-2xl flex items-center space-x-3">
+    <div id="toast-icon-bg" class="p-2 rounded-lg text-slate-950 bg-amber-500">
+        <i class="fa-solid fa-info" id="toast-icon"></i>
+    </div>
+    <div class="flex-1">
+        <h5 class="text-xs font-black uppercase text-slate-400 tracking-wider">Notificación</h5>
+        <p class="text-sm font-medium" id="toast-text">Acción realizada con éxito</p>
+    </div>
+    <button onclick="dismissToast()" class="text-slate-400 hover:text-white transition">
+        <i class="fa-solid fa-xmark"></i>
+    </button>
+</div>
+
+<!-- Punto de entrada de la aplicación -->
+<script type="module" src="js/app.js"></script>
+
+</body>
+</html>
