@@ -7,10 +7,11 @@ import { state, localData } from './state.js';
 let chartByType    = null;
 let chartComparison = null;
 
-// Plugin inline: dibuja porcentajes dentro de cada sector del donut
-const pieLabelsPlugin = {
+// Registrar globalmente para que Chart.js lo ejecute en todos los renders
+window.Chart.register({
     id: 'pieLabels',
     afterDraw(chart) {
+        if (chart.config.type !== 'doughnut') return;
         const { ctx } = chart;
         const dataset = chart.data.datasets[0];
         const meta    = chart.getDatasetMeta(0);
@@ -38,7 +39,7 @@ const pieLabelsPlugin = {
 
         ctx.restore();
     }
-};
+});
 
 export function renderCharts() {
     const incomes  = localData.incomes.filter(i  => i.projectId === state.activeProjectId);
@@ -62,7 +63,6 @@ function renderExpensesByType(expenses) {
     TYPES.forEach(t => { totals[t.key] = 0; });
     expenses.forEach(e => { if (totals[e.type] !== undefined) totals[e.type] += Number(e.val || 0); });
 
-    // Filtrar tipos con valor 0 para no saturar la leyenda
     const active = TYPES.filter(t => totals[t.key] > 0);
     const total  = active.reduce((s, t) => s + totals[t.key], 0);
 
@@ -75,7 +75,6 @@ function renderExpensesByType(expenses) {
         document.getElementById('chart-expenses-by-type').getContext('2d'),
         {
             type: 'doughnut',
-            plugins: [pieLabelsPlugin],
             data: {
                 labels,
                 datasets: [{ data, backgroundColor: colors, borderWidth: 1, borderColor: '#ffffff' }]
