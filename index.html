@@ -614,7 +614,15 @@
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Fuente o Concepto *</label>
-                <input type="text" id="income-form-source" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" placeholder="Ej: Desembolso del Banco">
+                <input type="text" id="income-form-source" required oninput="checkIncomeAlert()"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" placeholder="Ej: Desembolso del Banco">
+            </div>
+            <div id="income-credit-alert" class="hidden bg-amber-50 border border-amber-300 rounded-lg p-3 flex items-start gap-2.5">
+                <i class="fa-solid fa-triangle-exclamation text-amber-500 mt-0.5 flex-shrink-0"></i>
+                <div class="text-xs text-amber-800">
+                    <p class="font-bold">Ingreso por crédito o préstamo</p>
+                    <p class="mt-0.5">Este dinero debe ser devuelto — no es un ingreso real de la obra. Registra en observaciones el nombre del prestamista y la fecha de vencimiento.</p>
+                </div>
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Valor del Ingreso *</label>
@@ -676,7 +684,15 @@
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Descripción *</label>
-                <input type="text" id="expense-form-desc" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-600" placeholder="Ej: Compra de 50 sacos de cemento gris">
+                <input type="text" id="expense-form-desc" required oninput="checkExpenseAlert()"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-600" placeholder="Ej: Compra de 50 sacos de cemento gris">
+            </div>
+            <div id="expense-advance-alert" class="hidden bg-amber-50 border border-amber-300 rounded-lg p-3 flex items-start gap-2.5">
+                <i class="fa-solid fa-triangle-exclamation text-amber-500 mt-0.5 flex-shrink-0"></i>
+                <div class="text-xs text-amber-800">
+                    <p class="font-bold">Anticipo o préstamo a tercero</p>
+                    <p class="mt-0.5">Este desembolso puede ser recuperable. Cuando el dinero sea devuelto, recuerda registrar el reembolso como ingreso.</p>
+                </div>
             </div>
             <div class="grid grid-cols-2 gap-4 border-t border-slate-100 pt-3">
                 <div>

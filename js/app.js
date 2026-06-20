@@ -33,6 +33,22 @@ function renderAll() {
     renderCharts();
 }
 
+// ── Alertas contextuales en formularios ──────────────────────────────────────
+
+function checkIncomeAlert() {
+    const val      = document.getElementById('income-form-source').value.toLowerCase();
+    const keywords = ['crédito', 'credito', 'préstamo', 'prestamo', 'deuda', 'financiamiento', 'financiación', 'financiacion'];
+    const show     = keywords.some(k => val.includes(k));
+    document.getElementById('income-credit-alert').classList.toggle('hidden', !show);
+}
+
+function checkExpenseAlert() {
+    const val      = document.getElementById('expense-form-desc').value.toLowerCase();
+    const keywords = ['anticipo', 'adelanto', 'préstamo', 'prestamo', 'avance', 'adelanto'];
+    const show     = keywords.some(k => val.includes(k));
+    document.getElementById('expense-advance-alert').classList.toggle('hidden', !show);
+}
+
 // ── Exponer funciones al contexto global (necesario para los onclick del HTML) ─
 
 function exposeToWindow() {
@@ -53,6 +69,8 @@ function exposeToWindow() {
         updateReportPreview, triggerPrint, exportToExcel, exportToCSV,
         // Dashboard
         applyDashboardFilters, resetDashboardFilters,
+        // Alertas contextuales
+        checkIncomeAlert, checkExpenseAlert,
         // Utilidades
         formatCurrencyInput, dismissToast
     });
