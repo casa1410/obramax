@@ -7,6 +7,39 @@ import { state, localData } from './state.js';
 let chartByType    = null;
 let chartComparison = null;
 
+// Plugin inline: dibuja porcentajes dentro de cada sector del donut
+const pieLabelsPlugin = {
+    id: 'pieLabels',
+    afterDraw(chart) {
+        const { ctx } = chart;
+        const dataset = chart.data.datasets[0];
+        const meta    = chart.getDatasetMeta(0);
+        const total   = dataset.data.reduce((a, b) => a + b, 0);
+        if (!total) return;
+
+        ctx.save();
+        ctx.font         = 'bold 13px sans-serif';
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle    = '#ffffff';
+
+        meta.data.forEach((arc, i) => {
+            const value = dataset.data[i];
+            const pct   = (value / total) * 100;
+            if (pct < 5) return;
+
+            const midAngle  = (arc.startAngle + arc.endAngle) / 2;
+            const midRadius = (arc.innerRadius + arc.outerRadius) / 2;
+            const x = arc.x + Math.cos(midAngle) * midRadius;
+            const y = arc.y + Math.sin(midAngle) * midRadius;
+
+            ctx.fillText(`${pct.toFixed(1)}%`, x, y);
+        });
+
+        ctx.restore();
+    }
+};
+
 export function renderCharts() {
     const incomes  = localData.incomes.filter(i  => i.projectId === state.activeProjectId);
     const expenses = localData.expenses.filter(e => e.projectId === state.activeProjectId);
@@ -42,6 +75,7 @@ function renderExpensesByType(expenses) {
         document.getElementById('chart-expenses-by-type').getContext('2d'),
         {
             type: 'doughnut',
+            plugins: [pieLabelsPlugin],
             data: {
                 labels,
                 datasets: [{ data, backgroundColor: colors, borderWidth: 1, borderColor: '#ffffff' }]
@@ -57,8 +91,8 @@ function renderExpensesByType(expenses) {
                             font: { size: 11 },
                             generateLabels(chart) {
                                 return chart.data.labels.map((label, i) => {
-                                    const value      = chart.data.datasets[0].data[i];
-                                    const pct        = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                                    const value = chart.data.datasets[0].data[i];
+                                    const pct   = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
                                     return {
                                         text:      `${label}  ${pct}%`,
                                         fillStyle: chart.data.datasets[0].backgroundColor[i],
