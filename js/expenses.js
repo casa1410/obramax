@@ -117,9 +117,11 @@ export function handleSupportDocChange(docType) {
     const label = document.getElementById('support-doc-no-label');
 
     const DOC_LABELS = {
-        'Factura':                { label: 'Número de Factura *',       placeholder: 'Ej: FE-1093'  },
-        'Recibo de pago':         { label: 'Número de Recibo *',        placeholder: 'Ej: REC-992'  },
-        'Transferencia bancaria': { label: 'Número de Transferencia *', placeholder: 'Ej: TR-00912' }
+        'Factura':                { label: 'Número de Factura *',        placeholder: 'Ej: FE-1093'    },
+        'Recibo de pago':         { label: 'Número de Recibo *',         placeholder: 'Ej: REC-992'    },
+        'Transferencia bancaria': { label: 'Número de Transferencia *',  placeholder: 'Ej: TR-00912'   },
+        'RUT':                    { label: 'Número de NIT / RUT *',      placeholder: 'Ej: 900123456-1' },
+        'Recibo de caja menor':   { label: 'Número de Recibo *',         placeholder: 'Ej: RCM-045'    }
     };
 
     if (DOC_LABELS[docType]) {
