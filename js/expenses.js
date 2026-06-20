@@ -121,7 +121,8 @@ export function handleSupportDocChange(docType) {
         'Recibo de pago':         { label: 'Número de Recibo *',         placeholder: 'Ej: REC-992'    },
         'Transferencia bancaria': { label: 'Número de Transferencia *',  placeholder: 'Ej: TR-00912'   },
         'RUT':                    { label: 'Número de NIT / RUT *',      placeholder: 'Ej: 900123456-1' },
-        'Recibo de caja menor':   { label: 'Número de Recibo *',         placeholder: 'Ej: RCM-045'    }
+        'Recibo de caja menor':        { label: 'Número de Recibo *',         placeholder: 'Ej: RCM-045'    },
+        'VCA - Vale de Caja/Traslado': { label: 'Número de Vale *',           placeholder: 'Ej: VCA-001'    }
     };
 
     if (DOC_LABELS[docType]) {
