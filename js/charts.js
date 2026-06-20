@@ -16,8 +16,26 @@ export function renderCharts() {
 }
 
 function renderExpensesByType(expenses) {
-    const totals = { EQU: 0, MAT: 0, TPT: 0, MO: 0, 'COST IND': 0, CONT: 0 };
+    const TYPES = [
+        { key: 'EQU',      label: 'EQU - Equipos',          color: '#f59e0b' },
+        { key: 'MAT',      label: 'MAT - Materiales',        color: '#0284c7' },
+        { key: 'TPT',      label: 'TPT - Transporte',        color: '#f97316' },
+        { key: 'MO',       label: 'MO - Mano de Obra',       color: '#10b981' },
+        { key: 'COST IND', label: 'COST IND - Indirectos',   color: '#6366f1' },
+        { key: 'CONT',     label: 'CONT - Contratistas',     color: '#ec4899' },
+    ];
+
+    const totals = {};
+    TYPES.forEach(t => { totals[t.key] = 0; });
     expenses.forEach(e => { if (totals[e.type] !== undefined) totals[e.type] += Number(e.val || 0); });
+
+    // Filtrar tipos con valor 0 para no saturar la leyenda
+    const active = TYPES.filter(t => totals[t.key] > 0);
+    const total  = active.reduce((s, t) => s + totals[t.key], 0);
+
+    const labels = active.map(t => t.label);
+    const data   = active.map(t => totals[t.key]);
+    const colors = active.map(t => t.color);
 
     chartByType?.destroy();
     chartByType = new Chart(
@@ -25,18 +43,43 @@ function renderExpensesByType(expenses) {
         {
             type: 'doughnut',
             data: {
-                labels: ['EQU - Equipos', 'MAT - Materiales', 'TPT - Transporte', 'MO - Mano Obra', 'COST IND - Indirectos', 'CONT - Contratistas'],
-                datasets: [{
-                    data:            Object.values(totals),
-                    backgroundColor: ['#f59e0b', '#0284c7', '#f97316', '#10b981', '#6366f1', '#ec4899'],
-                    borderWidth:     1,
-                    borderColor:     '#ffffff'
-                }]
+                labels,
+                datasets: [{ data, backgroundColor: colors, borderWidth: 1, borderColor: '#ffffff' }]
             },
             options: {
                 responsive:          true,
                 maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            font: { size: 11 },
+                            generateLabels(chart) {
+                                return chart.data.labels.map((label, i) => {
+                                    const value      = chart.data.datasets[0].data[i];
+                                    const pct        = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                                    return {
+                                        text:      `${label}  ${pct}%`,
+                                        fillStyle: chart.data.datasets[0].backgroundColor[i],
+                                        hidden:    false,
+                                        index:     i
+                                    };
+                                });
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label(ctx) {
+                                const value = ctx.parsed;
+                                const pct   = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                                const fmt   = value.toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 });
+                                return `  ${fmt}  (${pct}%)`;
+                            }
+                        }
+                    }
+                }
             }
         }
     );
